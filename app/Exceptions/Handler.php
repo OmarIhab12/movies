@@ -46,6 +46,13 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception)
     {
-        return parent::render($request, $exception);
+        // if ($exception instanceof ModelNotFoundException) {
+            $response['error descreption'] = "Resource not found";
+            return response()->json([
+              'error' => $response
+            ], 404);
+        // }
+
+        // return parent::render($request, $exception);
     }
 }
