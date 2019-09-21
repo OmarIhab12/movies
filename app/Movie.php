@@ -18,6 +18,11 @@ class Movie extends Model
         return $this->belongsToMany(Actor::class, 'movie_actor');
     }
 
+    public function description()
+    {
+        return $this->hasMany(MovieDescription::class, 'movie_id');
+    }
+
     protected $fillable = [
         'title','description','image_url','rating','release_year','gross_profit','director',
     ];

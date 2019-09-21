@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Movie;
 use App\Genre;
 use App\Actor;
+use App\MovieDescription;
 use App;
 use Validator;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +46,14 @@ class MovieController extends Controller
         $page = 1;
         if(request()->has('page') && (int)request()->input('page') > 0){
           $page = request()->input('page');
+        }
+
+        $lang = 'en';
+        if(request()->has('lang')){
+          $possible_language_options = ["en", "de"];
+          if(in_array(request()->input('lang'), $possible_language_options)){
+            $lang = request()->input('lang');
+          }
         }
 
 
@@ -86,9 +95,16 @@ class MovieController extends Controller
         $rowdescreption['actors'] = "array of the movie's actors";
 
         foreach ($movies as $movie) {
-          $entity = Movie::find($movie->movie_id);
+          if($movie->movie_id != null){
+              $movie->id = $movie->movie_id;
+          }
+          else{
+              $movie->movie_id = $movie->id;
+          }
+          $entity = Movie::find($movie->id);
           $movie->genres = $entity->genres;
           $movie->actors = $entity->actors;
+          $movie->description = $entity->description->where('locale', $lang)->first()->description;
         }
 
         $movies['row descreption'] = $rowdescreption;
@@ -100,17 +116,21 @@ class MovieController extends Controller
     // return selected movie details
     public function details($id)
     {
+        $lang = 'en';
+        if(request()->has('lang')){
+          $possible_language_options = ["en", "de"];
+          if(in_array(request()->input('lang'), $possible_language_options)){
+            $lang = request()->input('lang');
+          }
+        }
         $response['request descreption'] = "get selected movie details";
 
         $movie = Movie::findOrFail($id);
 
         // App::setLocale('de');
-        app()->setLocale('fr');
-        $frenchText = "hello";
-        dd($frenchText);
         $rowdescreption['id'] = 'int';
         $rowdescreption['title'] = 'string';
-        $rowdescreption['description'] = trans('string');
+        $rowdescreption['description'] = 'string';
         $rowdescreption['image_url'] = 'string';
         $rowdescreption['rating'] = 'decimal';
         $rowdescreption['release_year'] = 'int';
@@ -122,6 +142,7 @@ class MovieController extends Controller
         $row = $movie->toArray();
         $row['genres'] = $movie->genres;
         $row['actors'] = $movie->actors;
+        $row['description'] = $movie->description->where('locale', $lang)->first()->description;
         $rows = [$row];
 
 
@@ -140,7 +161,8 @@ class MovieController extends Controller
         $response['request descreption'] = "create new movie entity";
         $validator = Validator::make($request->all(), [
           'title' => 'required',
-          'description' => 'required',
+          'description_en' => 'required',
+          'description_de' => 'required',
           'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg',
           // 'image_url' => 'required',
           'rating' => 'required | numeric | between:0,10',
@@ -156,18 +178,25 @@ class MovieController extends Controller
 
         $imageName = time().'.'.request()->image->getClientOriginalExtension();
         request()->image->move(public_path('images'), $imageName);
-        // dd("omar");
-        // $movie = Movie::create($request->all());
+
         $movie = new Movie;
         $movie->title = $request->input('title');
-        $movie->description = $request->input("description");
         $movie->image_url = url('images').'/'.$imageName;
         $movie->rating = $request->input('rating');
         $movie->release_year = $request->input('release_year');
         $movie->gross_profit = $request->input('gross_profit');
         $movie->director = $request->input('director');
         $movie->save();
-        // dd($movie->image_url);
+
+        $movie_description_en = new MovieDescription;
+        $movie_description_en->locale = 'en';
+        $movie_description_en->description = $request->input("description_en");
+
+        $movie_description_de = new MovieDescription;
+        $movie_description_de->locale = 'de';
+        $movie_description_de->description = $request->input("description_de");
+
+        $movie->description()->saveMany([$movie_description_en,$movie_description_de]);
 
         $genres = Genre::find($request->input('genres'));
         $movie->genres()->attach($genres);
@@ -227,12 +256,27 @@ class MovieController extends Controller
         $affected = $movie->save();
         $numbers_of_affected_rows = 1;
 
+        if($request->has('description_en')){
+          $movie_description_en = MovieDescription::where('locale', 'en')
+              ->where('movie_id', $movie->id)
+              ->update(['description' => $request->input('description_en')]);
+          $numbers_of_affected_rows++;
+        }
+
+        if($request->has('description_de')){
+          $movie_description_de = MovieDescription::where('locale', 'de')
+              ->where('movie_id', $movie->id)
+              ->update(['description' => $request->input('description_de')]);
+              $numbers_of_affected_rows++;
+        }
+        // $movie->description->german = $movie_description_de->description;
+
         $genres = Genre::find($request->input('genres'));
         $affected = $movie->genres()->sync($genres);
         $numbers_of_affected_rows += count($affected["attached"]) + count($affected["detached"]) + count($affected["updated"]);
 
         $actors = Actor::find($request->input('actors'));
-        $affected = $movie->actors()->attach($actors);
+        $affected = $movie->actors()->sync($actors);
         $numbers_of_affected_rows += count($affected["attached"]) + count($affected["detached"]) + count($affected["updated"]);
 
         $rowdescreption['id'] = 'int';
@@ -249,6 +293,7 @@ class MovieController extends Controller
         $row = $movie->toArray();
         $row['genres'] = $movie->genres;
         $row['actors'] = $movie->actors;
+        $row['description'] = $movie->description;
         $rows = [$row];
 
         $rowset['row descreption'] = $rowdescreption;
