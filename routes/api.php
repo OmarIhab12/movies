@@ -31,3 +31,9 @@ Route::get('actors/{id}', 'Api\ActorController@details');
 Route::post('actors', 'Api\ActorController@create');
 Route::put('actors/{id}', 'Api\ActorController@update');
 Route::delete('actors/{id}', 'Api\ActorController@delete');
+
+Route::get('movies', 'Api\MovieController@index');
+Route::get('movies/{id}', 'Api\MovieController@details');
+Route::post('movies', 'Api\MovieController@create');
+Route::put('movies/{id}', 'Api\MovieController@update');
+Route::delete('movies/{id}', 'Api\MovieController@delete');

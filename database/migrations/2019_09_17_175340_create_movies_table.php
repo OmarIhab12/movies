@@ -18,13 +18,13 @@ class CreateMoviesTable extends Migration
           $table->string('title');
           $table->text('description');
           $table->string('image_url');
-          $table->tinyInteger('rating');
+          $table->decimal('rating', 3, 1);
           $table->year('release_year');
           $table->string('gross_profit');
           $table->string('director');
       });
-      DB::statement('ALTER TABLE movies ADD CONSTRAINT chk_rating_min CHECK (rating > 0);');
-      DB::statement('ALTER TABLE movies ADD CONSTRAINT chk_rating_max CHECK (rating < 10);');
+      DB::statement('ALTER TABLE movies ADD CONSTRAINT chk_rating_min CHECK (rating >= 0);');
+      DB::statement('ALTER TABLE movies ADD CONSTRAINT chk_rating_max CHECK (rating <= 10);');
     }
 
     /**
