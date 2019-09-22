@@ -233,7 +233,7 @@ class MovieController extends Controller
     // update movie entity
     public function update(Request $request, $id)
     {
-        $response['request descreption'] = "create new movie entity";
+        $response['request descreption'] = "update movie entity";
         $validator = Validator::make($request->all(), [
           'image' => 'image|mimes:jpeg,png,jpg,gif,svg',
           'rating' => 'numeric | between:0,10',
