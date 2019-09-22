@@ -66,6 +66,7 @@ class MovieController extends Controller
                     ->orderBy($order_by, $order_by_value)->paginate($number, ['*'], 'page', $page);
             }
             else {
+              if($order_by == 'id') $order_by='movies.id';
                 $movies = DB::table('movies')
                     ->leftJoin('movie_genre', 'movies.id', '=', 'movie_genre.movie_id')
                     ->leftJoin('genres', 'genres.id', '=', 'movie_genre.genre_id')

@@ -17,19 +17,14 @@ class UserController extends Controller
     * @return \Illuminate\Http\Response
     */
     public function login(){
-      if ($validator->fails()) {
-        $response['error descreption'] = "the request data has validation errors";
-        $response['validation errors'] = $validator->errors();
-        return response()->json(['error'=>$response], 400);
-      }
       if(Auth::attempt(['email' => request('email'), 'password' => request('password')])){
-          $user = Auth::user();
-          $success['token'] =  $user->createToken('MyApp')-> accessToken;
-          return response()->json(['success' => $success], $this-> successStatus);
-      }
-      else{
-          return response()->json(['error'=>'Unauthorised'], 401);
-      }
+            $user = Auth::user();
+            $success['token'] =  $user->createToken('MyApp')-> accessToken;
+            return response()->json(['success' => $success], $this-> successStatus);
+        }
+        else{
+            return response()->json(['error'=>'Unauthorised'], 401);
+        }
     }
     /**
     * Register api
@@ -44,6 +39,7 @@ class UserController extends Controller
           'email' => 'required|email|unique:users',
           'password' => 'required',
           'c_password' => 'required|same:password',
+          'admin' =>'required',
         ]);
         if ($validator->fails()) {
           $response['error descreption'] = "the request data has validation errors";
